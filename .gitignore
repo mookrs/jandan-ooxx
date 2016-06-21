@@ -1,0 +1,11 @@
+ooxx/
+pic/
+
+__pycache__/
+*.py[cod]
+
+*.DS_Store
+Icon
+._*
+.Spotlight-V100
+.Trashes
