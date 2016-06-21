@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# Useful links:
+# http://stackoverflow.com/questions/2364593/urlretrieve-and-user-agent-python
+# https://docs.python.org/3.5/howto/urllib2.html
 import os
 import shutil
 import socket
@@ -19,63 +22,34 @@ category = 'ooxx'
 
 def is_img_type(response):
     mime = response.info()['Content-type']
-    return mime.endswith(('jpeg', 'png', 'gif'))
+    # Some images with Content-Type `image%2Fjpeg; charset=ISO-8859-1`,
+    # thus can't use `endswith()`
+    return any(img_type in mime for img_type in ['jpeg', 'png', 'gif'])
 
 
 def save_img(url, filename):
     try:
+        # Another way:
+        # req = Request(url)
+        # req.add_header('User-agent', 'Mozilla/5.0')
+        # img = urlopen(req, timeout=5)
         img = opener.open(url, timeout=5)
         if is_img_type(img):
             with open(filename, 'wb') as f:
                 shutil.copyfileobj(img, f)
+            return True
     except HTTPError as e:
         print('HTTPError at:', url)
         print('Error code:', e.code)
-        return False
     except URLError as e:
         print('URLError at:', url)
         print('Reason:', e.reason)
-        return False
     except socket.timeout as e:
         print('Failed to reach:', url)
         print('Socket timed out.')
-        return False
     except:
         print('Except occured.')
-        return False
-    else:
-        return True
-
-
-def save_img2(url, filename):
-    try:
-        # http://stackoverflow.com/questions/2364593/urlretrieve-and-user-agent-python
-        # can add headers for `urlretrieve`, but `FancyURLopener` has
-        # deprecated since version 3.3.
-        req = Request(url)
-        req.add_header('User-Agent', 'Mozilla/5.0')
-        img = urlopen(req, timeout=5)
-        if is_img_type(img):
-            with open(filename, 'wb') as f:
-                f.write(img.read())
-    except HTTPError as e:
-        # See https://docs.python.org/3.5/howto/urllib2.html
-        print('HTTPError at:', url)
-        print('Error code:', e.code)
-        return False
-    except URLError as e:
-        print('URLError at:', url)
-        print('Reason:', e.reason)
-        return False
-    except socket.timeout as e:
-        print('Failed to reach:', url)
-        print('Socket timed out.')
-        return False
-    except:
-        print('Except occured.')
-        return False
-    else:
-        return True
+    return False
 
 
 def parse_page(page_num):
@@ -114,7 +88,7 @@ def parse_page(page_num):
                 img_name = '{}-{}{}'.format(item.span.a.get_text(),
                                             index + 1, img_extension)
             img_path = os.path.join(category, img_name)
-            save_img(img_url, img_path)
+            print(save_img(img_url, img_path))
 
 
 def start_download(start_page, end_page):
@@ -125,4 +99,4 @@ def start_download(start_page, end_page):
 
 
 if __name__ == '__main__':
-    start_download(2000, 2010)
+    start_download(2, 2)
