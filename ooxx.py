@@ -16,6 +16,7 @@ opener.addheaders = []
 opener.addheaders.append(('User-agent', 'Mozilla/5.0'))
 opener.addheaders.append(('Cookie', '458528247=db856X2bSPJdJD3mZ0qNgqHxstlcw%2BC4xtmr%2BPfjKA; jdna=596e6fb28c1bb47f949e65e1ae03f7f5#1466510995815'))
 
+img_types = ['jpeg', 'png', 'gif']
 base_url = 'http://jandan.net/'
 category = 'ooxx'
 
@@ -24,7 +25,7 @@ def is_img_type(response):
     mime = response.info()['Content-type']
     # Some images with Content-Type `image%2Fjpeg; charset=ISO-8859-1`,
     # thus can't use `endswith()`
-    return any(img_type in mime for img_type in ['jpeg', 'png', 'gif'])
+    return any(img_type in mime for img_type in img_types)
 
 
 def save_img(url, filename):
@@ -52,13 +53,10 @@ def save_img(url, filename):
     return False
 
 
-def parse_page(page_num):
-    print('--- Parsing page {} ---'.format(page_num))
-    page_url = '{}{}/page-{}'.format(base_url, category, page_num)
-
+def make_soup(url):
     while True:
         try:
-            html = opener.open(page_url)
+            html = opener.open(url)
             break
         except HTTPError as e:
             if e.code in [500, 501, 502, 503, 504, 505]:
@@ -67,8 +65,14 @@ def parse_page(page_num):
                 continue
             else:
                 raise
+    return BeautifulSoup(html, 'html.parser')
 
-    soup = BeautifulSoup(html, 'html.parser')
+
+def parse_page(page_num):
+    print('--- Parsing page {} ---'.format(page_num))
+    page_url = '{}{}/page-{}'.format(base_url, category, page_num)
+
+    soup = make_soup(page_url)
     items = soup.find_all('div', {'class': 'text'})
     for item in items:
         img_tags = item.find_all(
@@ -88,7 +92,7 @@ def parse_page(page_num):
                 img_name = '{}-{}{}'.format(item.span.a.get_text(),
                                             index + 1, img_extension)
             img_path = os.path.join(category, img_name)
-            print(save_img(img_url, img_path))
+            save_img(img_url, img_path)
 
 
 def start_download(start_page, end_page):
@@ -99,4 +103,4 @@ def start_download(start_page, end_page):
 
 
 if __name__ == '__main__':
-    start_download(2, 2)
+    start_download(2000, 2005)
