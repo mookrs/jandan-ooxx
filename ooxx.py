@@ -16,12 +16,12 @@ from bs4 import BeautifulSoup
 opener = build_opener()
 opener.addheaders = []
 opener.addheaders.append(('User-agent', 'Mozilla/5.0'))
-# opener.addheaders.append(
-#     ('Cookie', '458528247=db856X2bSPJdJD3mZ0qNgqHxstlcw%2BC4xtmr%2BPfjKA; jdna=596e6fb28c1bb47f949e65e1ae03f7f5#1466510995815'))
+opener.addheaders.append(
+    ('Cookie', '458528247=db856X2bSPJdJD3mZ0qNgqHxstlcw%2BC4xtmr%2BPfjKA; jdna=596e6fb28c1bb47f949e65e1ae03f7f5#1466510995815'))
 
 base_url = 'http://jandan.net/'
 timeout = 5
-interval = 10
+visit_interval = 10
 
 
 def is_img_type(response):
@@ -47,12 +47,13 @@ def save_img(url, filename):
         print('Error code:', e.code)
     except URLError as e:
         print('URLError at:', url)
-        print('Reason:', e.reason)
+        print('Error reason:', e.reason)
     except socket.timeout as e:
         print('Failed to reach:', url)
         print('Socket timed out.')
-    except:
-        print('Exception occured at:', url)
+    except Exception as e:
+        print('Exception at:', url)
+        print('Error details:', e)
     return False
 
 
@@ -68,15 +69,15 @@ def make_soup(url):
                 retry_times += 1
                 if retry_times > 5:
                     sys.exit('Exit because of already retrying 5 times.')
-                print('Sleep for {} seconds...'.format(interval))
-                time.sleep(interval)
+                print('Sleep for {} seconds...'.format(visit_interval))
+                time.sleep(visit_interval)
                 continue
             else:
                 print('HTTPError at:', url)
                 print('Error code:', e.code)
                 sys.exit('Exit because of above error!')
         except Exception as e:
-            print('Exception occured at:', url)
+            print('Exception at:', url)
             print('Error details:', e)
             sys.exit('Exit because of above error!')
     return BeautifulSoup(html, 'html.parser')
@@ -112,7 +113,7 @@ def start_download(start_page, end_page):
     os.makedirs(category, exist_ok=True)
     for i in range(start_page, end_page + 1):
         parse_page(i)
-        time.sleep(interval)
+        time.sleep(visit_interval)
 
 
 def get_start_and_end_page(start_page, end_page, last_page, parser):
@@ -135,7 +136,7 @@ def get_start_and_end_page(start_page, end_page, last_page, parser):
         end_page = last_page
         start_page = end_page - 5
 
-    Wuliao pics only can access after page 8000.
+    # Wuliao pics only can access after page 8000.
     if category == 'pic' and start_page < 8000:
         parser.error(
             'startpage in wuliao pics should be bigger than 8000, because jandan has disabled the access before page-8000!')
