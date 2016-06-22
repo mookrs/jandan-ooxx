@@ -2,6 +2,7 @@
 # Useful links:
 # http://stackoverflow.com/questions/2364593/urlretrieve-and-user-agent-python
 # https://docs.python.org/3.5/howto/urllib2.html
+import argparse
 import os
 import shutil
 import socket
@@ -23,8 +24,8 @@ category = 'ooxx'
 
 def is_img_type(response):
     mime = response.info()['Content-type']
-    # Some images with Content-Type `image%2Fjpeg; charset=ISO-8859-1`,
-    # thus can't use `endswith()`
+    # Some images have Content-Type `image%2Fjpeg; charset=ISO-8859-1`,
+    # thus we can't use `endswith()`
     return any(img_type in mime for img_type in img_types)
 
 
@@ -65,6 +66,7 @@ def make_soup(url):
                 continue
             else:
                 raise
+
     return BeautifulSoup(html, 'html.parser')
 
 
@@ -77,10 +79,9 @@ def parse_page(page_num):
     for item in items:
         img_tags = item.find_all(
             'a', {'class': 'view_img_link'}) or item.find_all('img')
-        if img_tags is None:
-            continue
 
-        # One item maybe has several `<a>` or `<img>` tags, e.g. page-2021
+        # `img_tags` can be None.
+        # A item maybe has several `<a>` or `<img>` tags, e.g. page-2021
         for img_tag in img_tags:
             img_url = img_tag.get('href') or img_tag.get('src')
             img_extension = os.path.splitext(img_url)[1] or '.jpg'
@@ -103,4 +104,4 @@ def start_download(start_page, end_page):
 
 
 if __name__ == '__main__':
-    start_download(2000, 2005)
+    start_download(2, 4)
