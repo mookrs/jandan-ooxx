@@ -12,13 +12,12 @@ from urllib.error import HTTPError, URLError
 from bs4 import BeautifulSoup
 
 
-opener = build_opener()  # OpenerDirector
+opener = build_opener()
 opener.addheaders = []
 opener.addheaders.append(('User-agent', 'Mozilla/5.0'))
 opener.addheaders.append(
     ('Cookie', '458528247=db856X2bSPJdJD3mZ0qNgqHxstlcw%2BC4xtmr%2BPfjKA; jdna=596e6fb28c1bb47f949e65e1ae03f7f5#1466510995815'))
 
-img_types = ['jpeg', 'png', 'gif']
 base_url = 'http://jandan.net/'
 
 
@@ -50,7 +49,7 @@ def save_img(url, filename):
         print('Failed to reach:', url)
         print('Socket timed out.')
     except:
-        print('Except occured.')
+        print('Exception occured.')
     return False
 
 
@@ -65,6 +64,7 @@ def make_soup(url):
                 time.sleep(30)
                 continue
             else:
+                # TimeoutError HTTP Error 403
                 raise
     return BeautifulSoup(html, 'html.parser')
 
@@ -102,7 +102,7 @@ def start_download(start_page, end_page):
         time.sleep(10)
 
 
-def get_page_range(start_page, end_page, last_page):
+def get_start_and_end_page(start_page, end_page, last_page):
     if start_page is not None and end_page is not None:
         if start_page > end_page:
             parser.error('startpage shouldn\'t bigger than endpage!')
@@ -139,21 +139,27 @@ def main():
                         const='pic', default='ooxx',
                         help='download wuliao pics (default: meizi pics)')
     parser.add_argument('-s', '--startpage', type=int,
-                        help='set downloading start page (default: 5 pages before end page)')
+                        help='set start page (default: 5 pages before end page)')
     parser.add_argument('-e', '--endpage', type=int,
-                        help='set downloading end page (default: last page in the website)')
+                        help='set end page (default: the last page in the category)')
+    parser.add_argument('-t', '--type', nargs='+',
+                        choices=['jpeg', 'png', 'gif'],
+                        default=['jpeg', 'png', 'gif'],
+                        help='choose image types (default: jpeg, png and gif)')
 
     args = parser.parse_args()
-    global category
+    global category, img_types
     category = args.category
+    img_types = args.type
     start_page = args.startpage
     end_page = args.endpage
 
     last_page = get_last_page()
-    start_page, end_page =  get_page_range(start_page, end_page, last_page)
+    start_page, end_page = get_start_and_end_page(
+        start_page, end_page, last_page)
 
-    print(start_page, end_page)
-    #start_download(start_page, end_page)
+    # 无聊图只支持 8000 页以后
+    start_download(start_page, end_page)
 
 
 if __name__ == '__main__':
