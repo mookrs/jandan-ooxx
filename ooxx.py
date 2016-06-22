@@ -19,11 +19,11 @@ opener.addheaders.append(
     ('Cookie', '458528247=db856X2bSPJdJD3mZ0qNgqHxstlcw%2BC4xtmr%2BPfjKA; jdna=596e6fb28c1bb47f949e65e1ae03f7f5#1466510995815'))
 
 base_url = 'http://jandan.net/'
-
+timeout = 5
 
 def is_img_type(response):
     mime = response.info()['Content-type']
-    # Some images have Content-Type `image%2Fjpeg; charset=ISO-8859-1`,
+    # Some images include Content-Type `image%2Fjpeg; charset=ISO-8859-1`,
     # thus we can't use `endswith()`
     return any(img_type in mime for img_type in img_types)
 
@@ -33,8 +33,8 @@ def save_img(url, filename):
         # Another way:
         # req = Request(url)
         # req.add_header('User-agent', 'Mozilla/5.0')
-        # img = urlopen(req, timeout=5)
-        img = opener.open(url, timeout=5)
+        # img = urlopen(req, timeout=timeout)
+        img = opener.open(url, timeout=timeout)
         if is_img_type(img):
             with open(filename, 'wb') as f:
                 shutil.copyfileobj(img, f)
