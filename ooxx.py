@@ -6,6 +6,7 @@ import argparse
 import os
 import shutil
 import socket
+import sys
 import time
 from urllib.request import Request, urlopen, build_opener
 from urllib.error import HTTPError, URLError
@@ -15,11 +16,13 @@ from bs4 import BeautifulSoup
 opener = build_opener()
 opener.addheaders = []
 opener.addheaders.append(('User-agent', 'Mozilla/5.0'))
-opener.addheaders.append(
-    ('Cookie', '458528247=db856X2bSPJdJD3mZ0qNgqHxstlcw%2BC4xtmr%2BPfjKA; jdna=596e6fb28c1bb47f949e65e1ae03f7f5#1466510995815'))
+# opener.addheaders.append(
+#     ('Cookie', '458528247=db856X2bSPJdJD3mZ0qNgqHxstlcw%2BC4xtmr%2BPfjKA; jdna=596e6fb28c1bb47f949e65e1ae03f7f5#1466510995815'))
 
 base_url = 'http://jandan.net/'
 timeout = 5
+interval = 10
+
 
 def is_img_type(response):
     mime = response.info()['Content-type']
@@ -49,23 +52,33 @@ def save_img(url, filename):
         print('Failed to reach:', url)
         print('Socket timed out.')
     except:
-        print('Exception occured.')
+        print('Exception occured at:', url)
     return False
 
 
 def make_soup(url):
+    retry_times = 0
     while True:
         try:
             html = opener.open(url)
             break
         except HTTPError as e:
             if e.code in [500, 501, 502, 503, 504, 505]:
-                print('--- Meet 50x error. Sleep for some seconds... ---')
-                time.sleep(30)
+                print('50x error at:', url)
+                retry_times += 1
+                if retry_times > 5:
+                    sys.exit('Exit because of already retrying 5 times.')
+                print('Sleep for {} seconds...'.format(interval))
+                time.sleep(interval)
                 continue
             else:
-                # TimeoutError HTTP Error 403
-                raise
+                print('HTTPError at:', url)
+                print('Error code:', e.code)
+                sys.exit('Exit because of above error!')
+        except Exception as e:
+            print('Exception occured at:', url)
+            print('Error details:', e)
+            sys.exit('Exit because of above error!')
     return BeautifulSoup(html, 'html.parser')
 
 
@@ -99,10 +112,10 @@ def start_download(start_page, end_page):
     os.makedirs(category, exist_ok=True)
     for i in range(start_page, end_page + 1):
         parse_page(i)
-        time.sleep(10)
+        time.sleep(interval)
 
 
-def get_start_and_end_page(start_page, end_page, last_page):
+def get_start_and_end_page(start_page, end_page, last_page, parser):
     if start_page is not None and end_page is not None:
         if start_page > end_page:
             parser.error('startpage shouldn\'t be bigger than endpage!')
@@ -122,9 +135,10 @@ def get_start_and_end_page(start_page, end_page, last_page):
         end_page = last_page
         start_page = end_page - 5
 
-    # Wuliao pics only can access after page 8000.
+    Wuliao pics only can access after page 8000.
     if category == 'pic' and start_page < 8000:
-        parser.error('startpage in wuliao pics should be bigger than 8000, because jandan has disabled the access of pages before 8000!')
+        parser.error(
+            'startpage in wuliao pics should be bigger than 8000, because jandan has disabled the access before page-8000!')
 
     return start_page, end_page
 
@@ -160,7 +174,7 @@ def main():
 
     last_page = get_last_page()
     start_page, end_page = get_start_and_end_page(
-        start_page, end_page, last_page)
+        start_page, end_page, last_page, parser)
 
     start_download(start_page, end_page)
 
