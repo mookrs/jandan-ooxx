@@ -5,7 +5,6 @@
 import argparse
 import os
 import shutil
-import socket
 import sys
 import time
 from urllib.request import Request, urlopen, build_opener
@@ -48,9 +47,6 @@ def save_img(url, filename):
     except URLError as e:
         print('URLError at:', url)
         print('Error reason:', e.reason)
-    except socket.timeout as e:
-        print('Failed to reach:', url)
-        print('Socket timed out.')
     except Exception as e:
         print('Exception at:', url)
         print('Error details:', e)
