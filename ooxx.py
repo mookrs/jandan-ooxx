@@ -24,7 +24,7 @@ timeout = 5
 def is_img_type(response):
     mime = response.info()['Content-type']
     # Some images include Content-Type `image%2Fjpeg; charset=ISO-8859-1`,
-    # thus we can't use `endswith()`
+    # thus we can't use `endswith()`.
     return any(img_type in mime for img_type in img_types)
 
 
@@ -79,8 +79,8 @@ def parse_page(page_num):
         img_tags = item.find_all(
             'a', {'class': 'view_img_link'}) or item.find_all('img')
 
-        # `img_tags` can be None.
-        # A item maybe has several `<a>` or `<img>` tags, e.g. page-2021
+        # `img_tags` could be `[]`.
+        # An item maybe has several `<a>` or `<img>` tags, e.g. page-2021.
         for img_tag in img_tags:
             img_url = img_tag.get('href') or img_tag.get('src')
             img_extension = os.path.splitext(img_url)[1] or '.jpg'
@@ -105,7 +105,7 @@ def start_download(start_page, end_page):
 def get_start_and_end_page(start_page, end_page, last_page):
     if start_page is not None and end_page is not None:
         if start_page > end_page:
-            parser.error('startpage shouldn\'t bigger than endpage!')
+            parser.error('startpage shouldn\'t be bigger than endpage!')
         elif start_page <= 0 or start_page > last_page:
             parser.error('startpage out of range!')
         elif end_page <= 0 or end_page > last_page:
@@ -121,6 +121,10 @@ def get_start_and_end_page(start_page, end_page, last_page):
     else:
         end_page = last_page
         start_page = end_page - 5
+
+    # Wuliao pics only can access after page 8000.
+    if category == 'pic' and start_page < 8000:
+        parser.error('startpage in wuliao pics should be bigger than 8000, because jandan has disabled the access of pages before 8000!')
 
     return start_page, end_page
 
@@ -158,7 +162,6 @@ def main():
     start_page, end_page = get_start_and_end_page(
         start_page, end_page, last_page)
 
-    # 无聊图只支持 8000 页以后
     start_download(start_page, end_page)
 
 
