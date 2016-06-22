@@ -15,11 +15,11 @@ from bs4 import BeautifulSoup
 opener = build_opener()  # OpenerDirector
 opener.addheaders = []
 opener.addheaders.append(('User-agent', 'Mozilla/5.0'))
-opener.addheaders.append(('Cookie', '458528247=db856X2bSPJdJD3mZ0qNgqHxstlcw%2BC4xtmr%2BPfjKA; jdna=596e6fb28c1bb47f949e65e1ae03f7f5#1466510995815'))
+opener.addheaders.append(
+    ('Cookie', '458528247=db856X2bSPJdJD3mZ0qNgqHxstlcw%2BC4xtmr%2BPfjKA; jdna=596e6fb28c1bb47f949e65e1ae03f7f5#1466510995815'))
 
 img_types = ['jpeg', 'png', 'gif']
 base_url = 'http://jandan.net/'
-category = 'ooxx'
 
 
 def is_img_type(response):
@@ -66,7 +66,6 @@ def make_soup(url):
                 continue
             else:
                 raise
-
     return BeautifulSoup(html, 'html.parser')
 
 
@@ -103,5 +102,59 @@ def start_download(start_page, end_page):
         time.sleep(10)
 
 
+def get_page_range(start_page, end_page, last_page):
+    if start_page is not None and end_page is not None:
+        if start_page > end_page:
+            parser.error('startpage shouldn\'t bigger than endpage!')
+        elif start_page <= 0 or start_page > last_page:
+            parser.error('startpage out of range!')
+        elif end_page <= 0 or end_page > last_page:
+            parser.error('endpage out of range!')
+    elif start_page is None and end_page is not None:
+        if end_page <= 0 or end_page > last_page:
+            parser.error('endpage out of range!')
+        start_page = end_page - 5 if end_page > 5 else 1
+    elif start_page is not None and end_page is None:
+        if start_page <= 0 or start_page > last_page:
+            parser.error('startpage out of range!')
+        end_page = last_page
+    else:
+        end_page = last_page
+        start_page = end_page - 5
+
+    return start_page, end_page
+
+
+def get_last_page():
+    url = '{}{}'.format(base_url, category)
+    soup = make_soup(url)
+    span = soup.find('span', {'class': 'current-comment-page'})
+    return int(span.get_text()[1:-1])
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Download images from jandan.net.')
+    parser.add_argument('-p', '--pic', dest='category', action='store_const',
+                        const='pic', default='ooxx',
+                        help='download wuliao pics (default: meizi pics)')
+    parser.add_argument('-s', '--startpage', type=int,
+                        help='set downloading start page (default: 5 pages before end page)')
+    parser.add_argument('-e', '--endpage', type=int,
+                        help='set downloading end page (default: last page in the website)')
+
+    args = parser.parse_args()
+    global category
+    category = args.category
+    start_page = args.startpage
+    end_page = args.endpage
+
+    last_page = get_last_page()
+    start_page, end_page =  get_page_range(start_page, end_page, last_page)
+
+    print(start_page, end_page)
+    #start_download(start_page, end_page)
+
+
 if __name__ == '__main__':
-    start_download(2, 4)
+    main()
