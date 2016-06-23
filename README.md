@@ -11,6 +11,28 @@ jandan-ooxx is yet another Jandan "ooxx" pictrues crawler, also it can crawl "pi
 
 ## Usage
 
+```bash
+$ python3 ooxx.py -h
+usage: ooxx.py [-h] [-p] [-s STARTPAGE] [-e ENDPAGE]
+               [-t {jpeg,png,gif} [{jpeg,png,gif} ...]] [--ox OX] [--oo OO]
+               [--xx XX]
+
+Download images from jandan.net.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p, --pic             download wuliao pics (default: meizi pics)
+  -s STARTPAGE, --startpage STARTPAGE
+                        set start page (default: 5 pages before end page)
+  -e ENDPAGE, --endpage ENDPAGE
+                        set end page (default: the last page in the category)
+  -t {jpeg,png,gif} [{jpeg,png,gif} ...], --type {jpeg,png,gif} [{jpeg,png,gif} ...]
+                        choose image types (default: jpeg, png and gif)
+  --ox OX               set how many times oo is more than xx
+  --oo OO               minimal oo number
+  --xx XX               maximal xx number
+```
+
 ## License
 
 MIT
