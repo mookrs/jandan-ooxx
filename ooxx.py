@@ -125,10 +125,23 @@ def parse_page(page_num):
     soup = make_soup(page_url)
     items = soup.find_all('div', {'class': 'text'})
     for item in items:
-        # `img_tags` could be `[]`.
+        item_id = item.span.a.get_text()
+        oo = int(
+            item.find('span', {'id': 'cos_support-' + item_id}).get_text())
+        xx = int(
+            item.find('span', {'id': 'cos_unsupport-' + item_id}).get_text())
+
+        if oo < oo_min or xx > xx_max:
+            continue
+        if xx > 0:
+            if oo / xx < ox_ratio:
+                continue
+        elif oo == 0 and ox_ratio > 0:
+            continue
+
+        # `img_tags` could be `[]`, e.g. page-4.
         img_tags = item.find_all(
             'a', {'class': 'view_img_link'}) or item.find_all('img')
-
         # An item maybe has several `<a>` or `<img>` tags, e.g. page-2021.
         for img_tag in img_tags:
             img_url = img_tag.get('href') or img_tag.get('src')
@@ -136,10 +149,9 @@ def parse_page(page_num):
 
             index = img_tags.index(img_tag)
             if index == 0:
-                img_name = '{}{}'.format(item.span.a.get_text(), img_extension)
+                img_name = '{}{}'.format(item_id, img_extension)
             else:
-                img_name = '{}-{}{}'.format(item.span.a.get_text(),
-                                            index + 1, img_extension)
+                img_name = '{}-{}{}'.format(item_id, index + 1, img_extension)
             img_path = os.path.join(category, img_name)
             save_img(img_url, img_path)
 
@@ -206,7 +218,7 @@ def get_last_page():
 
 
 def main():
-    """Program main function."""
+    """Program main function. Add command line arguments support."""
     parser = argparse.ArgumentParser(
         description='Download images from jandan.net.')
     parser.add_argument('-p', '--pic', dest='category', action='store_const',
@@ -216,18 +228,25 @@ def main():
                         help='set start page (default: 5 pages before end page)')
     parser.add_argument('-e', '--endpage', type=int,
                         help='set end page (default: the last page in the category)')
-    parser.add_argument('-o', '--ooxx', type=float,
-                        help='set how many times oo is more than xx')
     parser.add_argument('-t', '--type', nargs='+',
                         choices=['jpeg', 'png', 'gif'],
                         default=['jpeg', 'png', 'gif'],
                         help='choose image types (default: jpeg, png and gif)')
+    parser.add_argument('--ox', type=float, default=0,
+                        help='set how many times oo is more than xx')
+    parser.add_argument('--oo', type=int, default=0,
+                        help='minimal oo number')
+    parser.add_argument('--xx', type=int, default=999,
+                        help='maximal xx number')
 
     args = parser.parse_args()
-    global category, img_types, ooxx
+    global category, img_types, ox_ratio, oo_min, xx_max
     category = args.category
     img_types = args.type
-    ooxx = args.ooxx
+    ox_ratio = args.ox
+    oo_min = args.oo
+    xx_max = args.xx
+
     start_page = args.startpage
     end_page = args.endpage
 
