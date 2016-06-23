@@ -1,7 +1,15 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Useful links:
-# http://stackoverflow.com/questions/2364593/urlretrieve-and-user-agent-python
-# https://docs.python.org/3.5/howto/urllib2.html
+"""
+    ooxx
+    ~~~~
+
+    Yet another Jandan ooxx pictrues crawler.
+
+    :copyright: (c) 2016 by mookrs.
+    :license: MIT.
+"""
+
 import argparse
 import os
 import shutil
@@ -9,6 +17,7 @@ import sys
 import time
 from urllib.request import Request, urlopen, build_opener
 from urllib.error import HTTPError, URLError
+
 from bs4 import BeautifulSoup
 
 
@@ -18,12 +27,20 @@ opener.addheaders.append(('User-agent', 'Mozilla/5.0'))
 opener.addheaders.append(
     ('Cookie', '458528247=db856X2bSPJdJD3mZ0qNgqHxstlcw%2BC4xtmr%2BPfjKA; jdna=596e6fb28c1bb47f949e65e1ae03f7f5#1466510995815'))
 
-base_url = 'http://jandan.net/'
-timeout = 5
-visit_interval = 10
+BASE_URL = 'http://jandan.net/'
+TIMEOUT = 5
+VISIT_INTERVAL = 10
 
 
 def is_img_type(response):
+    """Check if the response from server with image Content-Type header.
+
+    Args:
+        response: A http.client.HTTPResponse instance.
+
+    Returns:
+        The Boolean value of image Content-Type header checking.
+    """
     mime = response.info()['Content-type']
     # Some images include Content-Type `image%2Fjpeg; charset=ISO-8859-1`,
     # thus we can't use `endswith()`.
@@ -31,12 +48,21 @@ def is_img_type(response):
 
 
 def save_img(url, filename):
+    """Download image from URL to disk.
+
+    Args:
+        url: An image URL.
+        filename: A file name store on disk.
+
+    Returns:
+        The Boolean value of saving successfully.
+    """
     try:
         # Another way:
         # req = Request(url)
         # req.add_header('User-agent', 'Mozilla/5.0')
-        # img = urlopen(req, timeout=timeout)
-        img = opener.open(url, timeout=timeout)
+        # img = urlopen(req, timeout=TIMEOUT)
+        img = opener.open(url, timeout=TIMEOUT)
         if is_img_type(img):
             with open(filename, 'wb') as f:
                 shutil.copyfileobj(img, f)
@@ -54,6 +80,14 @@ def save_img(url, filename):
 
 
 def make_soup(url):
+    """Return BeautifulSoup instance base on url.
+
+    Args:
+        url: A URL.
+
+    Returns:
+        BeautifulSoup instance.
+    """
     retry_times = 0
     while True:
         try:
@@ -65,8 +99,8 @@ def make_soup(url):
                 retry_times += 1
                 if retry_times > 5:
                     sys.exit('Exit because of already retrying 5 times.')
-                print('Sleep for {} seconds...'.format(visit_interval))
-                time.sleep(visit_interval)
+                print('Sleep for {} seconds...'.format(VISIT_INTERVAL))
+                time.sleep(VISIT_INTERVAL)
                 continue
             else:
                 print('HTTPError at:', url)
@@ -80,16 +114,21 @@ def make_soup(url):
 
 
 def parse_page(page_num):
+    """Parse page to find images url.
+
+    Args:
+        page_num: Page number.
+    """
     print('--- Parsing page {} ---'.format(page_num))
-    page_url = '{}{}/page-{}'.format(base_url, category, page_num)
+    page_url = '{}{}/page-{}'.format(BASE_URL, category, page_num)
 
     soup = make_soup(page_url)
     items = soup.find_all('div', {'class': 'text'})
     for item in items:
+        # `img_tags` could be `[]`.
         img_tags = item.find_all(
             'a', {'class': 'view_img_link'}) or item.find_all('img')
 
-        # `img_tags` could be `[]`.
         # An item maybe has several `<a>` or `<img>` tags, e.g. page-2021.
         for img_tag in img_tags:
             img_url = img_tag.get('href') or img_tag.get('src')
@@ -106,13 +145,31 @@ def parse_page(page_num):
 
 
 def start_download(start_page, end_page):
+    """Download images from start page to end page.
+
+    Args:
+        start_page: Start page number.
+        end_page: End page number.
+    """
     os.makedirs(category, exist_ok=True)
     for i in range(start_page, end_page + 1):
         parse_page(i)
-        time.sleep(visit_interval)
+        time.sleep(VISIT_INTERVAL)
 
 
 def get_start_and_end_page(start_page, end_page, last_page, parser):
+    """Check if page numbers user typed in are legal, return start page
+    number and end page number tuple.
+
+    Args:
+        start_page: Start page number user typed in or default.
+        end_page: End page number user typed in or default.
+        last_page: The last page number in special category.
+        parser: An argparse.ArgumentParser instance.
+
+    Returns:
+        Final legal start page number and end page number tuple.
+    """
     if start_page is not None and end_page is not None:
         if start_page > end_page:
             parser.error('startpage shouldn\'t be bigger than endpage!')
@@ -135,19 +192,21 @@ def get_start_and_end_page(start_page, end_page, last_page, parser):
     # Wuliao pics only can access after page 8000.
     if category == 'pic' and start_page < 8000:
         parser.error(
-            'startpage in wuliao pics should be bigger than 8000, because jandan has disabled the access before page-8000!')
+            'startpage in wuliao pics should be bigger than 8000, because Jandan has disabled the access before page-8000!')
 
     return start_page, end_page
 
 
 def get_last_page():
-    url = '{}{}'.format(base_url, category)
+    """Get the last page number in special category (ooxx or pic)."""
+    url = '{}{}'.format(BASE_URL, category)
     soup = make_soup(url)
     span = soup.find('span', {'class': 'current-comment-page'})
     return int(span.get_text()[1:-1])
 
 
 def main():
+    """Program main function."""
     parser = argparse.ArgumentParser(
         description='Download images from jandan.net.')
     parser.add_argument('-p', '--pic', dest='category', action='store_const',
@@ -157,15 +216,18 @@ def main():
                         help='set start page (default: 5 pages before end page)')
     parser.add_argument('-e', '--endpage', type=int,
                         help='set end page (default: the last page in the category)')
+    parser.add_argument('-o', '--ooxx', type=float,
+                        help='set how many times oo is more than xx')
     parser.add_argument('-t', '--type', nargs='+',
                         choices=['jpeg', 'png', 'gif'],
                         default=['jpeg', 'png', 'gif'],
                         help='choose image types (default: jpeg, png and gif)')
 
     args = parser.parse_args()
-    global category, img_types
+    global category, img_types, ooxx
     category = args.category
     img_types = args.type
+    ooxx = args.ooxx
     start_page = args.startpage
     end_page = args.endpage
 
