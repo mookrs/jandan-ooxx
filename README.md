@@ -1,3 +1,6 @@
+![Python 3.5](https://img.shields.io/badge/python-3.5-blue.svg)
+![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)
+
 # jandan-ooxx
 
 又一个煎蛋妹子图爬虫。
